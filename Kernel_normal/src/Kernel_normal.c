@@ -56,12 +56,12 @@ int count(struct dimensions *dim) {
 	if (count == NULL) {
 		return 1;
 	}
-	int buff;
+	float buff;
 	int ncolumn;
-	fscanf(count, "%d", &buff);
+	fscanf(count, "%f", &buff);
 	ncolumn = 1;
 	while (fgetc(count) != '\n') {
-		fscanf(count, "%d", &buff);
+		fscanf(count, "%f", &buff);
 		ncolumn++;
 	}
 	fclose(count);
