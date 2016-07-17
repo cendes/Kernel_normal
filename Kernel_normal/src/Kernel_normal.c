@@ -8,15 +8,22 @@ struct dimensions {
 	int nline;
 };
 
+struct parameters {
+	double mean;
+	double variance;
+};
+
 int count(struct dimensions *dim);
 float ** input(struct dimensions *dim);
-double ** calc(float **value, int mu, int sigma, struct dimensions *dim);
+int getpars(struct parameters *par);
+double ** calc(float **value, struct dimensions *dim, struct parameters *var);
 void freevalue(float **value, struct dimensions *dim);
 int output(double **result, struct dimensions *dim);
 void freeresult(double **result, struct dimensions *dim);
 
 int main(void) {
 	struct dimensions dim;
+	struct parameters par;
 	float **value;
 	double **result;
 	if (count(&dim) == 1) {
@@ -27,7 +34,11 @@ int main(void) {
 		perror("Error: could not write input");
 		return 1;
 	}
-	if ((result = calc(value, 0, 1, &dim)) == NULL) {
+	if(getpars(&par) == 1){
+		perror("Error: could not get parameters");
+		return 1;
+	}
+	if ((result = calc(value, &dim, &par)) == NULL) {
 		perror("Error: could not allocate memory");
 		return 1;
 	}
@@ -84,7 +95,27 @@ float ** input(struct dimensions *dim) {
 	return value;
 }
 
-double ** calc(float **value, int mu, int sigma, struct dimensions *dim) {
+int getpars(struct parameters *par) {
+	float mu;
+	float tau;
+	FILE *mean = fopen("mean", "r");
+	if (mean == NULL) {
+		return 1;
+	}
+	fscanf(mean, "%f", &mu);
+	fclose(mean);
+	FILE *std_dev = fopen("standard_deviation", "r");
+	if (std_dev == NULL) {
+		return 1;
+	}
+	fscanf(std_dev, "%f", &tau);
+	fclose(std_dev);
+	par->mean = mu;
+	par->variance = tau;
+	return 0;
+}
+
+double ** calc(float **value, struct dimensions *dim, struct parameters *par) {
 	static double **result;
 	result = calloc(dim->ncolumn, sizeof(double*));
 	if (result == NULL) {
@@ -100,8 +131,8 @@ double ** calc(float **value, int mu, int sigma, struct dimensions *dim) {
 	}
 	for (j = 0; j < dim->nline; j++) {
 		for (i = 0; i < dim->ncolumn; i++) {
-			result[i][j] = pow(M_E / sqrt(2 * M_PI * pow(sigma, 2)),
-					-pow(value[i][j] - mu, 2) / pow(sigma, 2));
+			result[i][j] = pow(M_E / sqrt(2 * M_PI * pow(par->variance, 2)),
+					-pow(value[i][j] - par->mean, 2) / pow(par->variance, 2));
 		}
 	}
 	return result;
